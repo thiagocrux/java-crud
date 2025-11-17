@@ -1,25 +1,38 @@
 package com.todoapp;
 
+import io.github.cdimascio.dotenv.Dotenv;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
 public class UserDAO {
-    private final String jdbcURL = "jdbc:postgresql://localhost:5432/java_crud_db";
-    private final String jdbcUsername = "root";
-    private final String jdbcPassword = "root";
+    private static final Dotenv DOTENV = Dotenv.configure().ignoreIfMissing().load();
 
-    private static final String INSERT_USERS_QUERY = "INSERT INTO users (name, email) VALUES (?, ?);";
-    private static final String SELECT_USERS_BY_ID_QUERY = "SELECT id, name, email FROM users WHERE id = ?;";
-    private static final String SELECT_ALL_USERS_QUERY = "SELECT * FROM users;";
-    private static final String DELETE_USERS_QUERY = "DELETE FROM users WHERE id = ?;";
-    private static final String UPDATE_USER_QUERY = "UPDATE users SET name = ?, email = ? WHERE id = ?;";
+    private static String getEnv(String key, String def) {
+        String v = DOTENV.get(key);
+        if (v == null || v.isBlank()) v = System.getenv(key);
+        return (v == null || v.isBlank()) ? def : v;
+    }
+
+    private static final String HOST = getEnv("POSTGRES_HOST", "localhost");
+    private static final String PORT = getEnv("POSTGRES_HOST_PORT", "5432");
+    private static final String DB   = getEnv("POSTGRES_DB", getEnv("POSTGRES_DATABASE", "java_crud_db"));
+    private static final String USER = getEnv("POSTGRES_USER", "root");
+    private static final String PASS = getEnv("POSTGRES_PASSWORD", "root");
+
+    private static final String JDBC_URL = "jdbc:postgresql://" + HOST + ":" + PORT + "/" + DB;
+
+    private static final String INSERT_USERS_QUERY = "INSERT INTO users (name, email) VALUES (?, ?)";
+    private static final String SELECT_USERS_BY_ID_QUERY = "SELECT id, name, email FROM users WHERE id = ?";
+    private static final String SELECT_ALL_USERS_QUERY = "SELECT id, name, email FROM users ORDER BY id";
+    private static final String DELETE_USERS_QUERY = "DELETE FROM users WHERE id = ?";
+    private static final String UPDATE_USER_QUERY = "UPDATE users SET name = ?, email = ? WHERE id = ?";
 
     protected Connection getConnection() {
         Connection connection = null;
 
         try {
-            connection = DriverManager.getConnection(jdbcURL, jdbcUsername, jdbcPassword);
+            connection = DriverManager.getConnection(JDBC_URL, USER, PASS);
         } catch (SQLException exception) {
             System.err.println("Erro ao conectar: " + exception.getMessage());
             exception.printStackTrace();
